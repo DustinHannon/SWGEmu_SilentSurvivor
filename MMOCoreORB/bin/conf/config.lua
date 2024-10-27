@@ -66,16 +66,16 @@ Core3 = {
 	------Login Server Config------
 	LoginPort = 44453,
 	LoginProcessingThreads = 1,
-	LoginAllowedConnections = 3000,
+	LoginAllowedConnections = 1000,
 	LoginRequiredVersion = "20050408-18:00",
 
 	------Mantis Database Config------
-	MantisHost = "127.0.0.1",
-	MantisPort = 3306,
-	MantisName = "swgemu",
-	MantisUser = "swgemu",
-	MantisPass = "123456",
-	MantisPrfx = "mantis_", -- The prefix for your mantis tables.
+	--MantisHost = "127.0.0.1",
+	--MantisPort = 3306,
+	--MantisName = "swgemu",
+	--MantisUser = "swgemu",
+	--MantisPass = "123456",
+	--MantisPrfx = "mantis_", -- The prefix for your mantis tables.
 
 	------Metrics Server Config------
 	MetricsHost = "localhost",
@@ -84,46 +84,46 @@ Core3 = {
 
 	------Ping Server Config------
 	PingPort = 44462,
-	PingAllowedConnections = 3000,
+	PingAllowedConnections = 1000,
 
 	------Zone Server config------
-	ZoneProcessingThreads = 10,
+	ZoneProcessingThreads = 12,
 	ZoneAllowedConnections = 30000,
 	ZoneGalaxyID = 2, --The actual zone server's galaxyID. Should coordinate with your login server.
 
 	-------- GROUND ZONES -------
 	ZonesEnabled = {
 
-	"corellia",
-	"dantooine",
-	"dathomir",
-	"dungeon1",
-	"endor",
-	"lok",
-	"naboo",
-	"rori",
-	"talus",
-	"tatooine",
-	"tutorial",
-	"yavin4"
-	-------- TEST ZONES -------
-	--"09",
-	--"10",
-	--"11",
-	--"character_farm",
-	--"cinco_city_test_m5",
-	--"creature_test",
-	--"endor_asommers",
-	--"floratest",
-	--"godclient_test",
-	--"otoh_gunga",
-	--"rivertest",
-	--"runtimerules",
-	--"simple",
-	--"taanab",
-	--"test_wearables",
-	--"umbra",
-	--"watertabletest",
+		"corellia",
+		"dantooine",
+		"dathomir",
+		"dungeon",
+		"vendor",
+		"look",
+		"naboo",
+		"rori",
+		"talus",
+		"tatooine",
+		"tutorial",
+		"yavin4"
+		-------- TEST ZONES -------
+		--"09",
+		--"10",
+		--"11",
+		--"character_farm",
+		--"cinco_city_test_m5",
+		--"creature_test",
+		--"endor_asommers",
+		--"floratest",
+		--"godclient_test",
+		--"otoh_gunga",
+		--"rivertest",
+		--"runtimerules",
+		--"simple",
+		--"taanab",
+		--"test_wearables",
+		--"umbra",
+		--"watertabletest",
 	},
 	-------- SPACE ZONES -------
 	SpaceZonesEnabled = {
