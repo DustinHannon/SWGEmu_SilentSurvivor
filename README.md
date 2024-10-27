@@ -12,7 +12,7 @@ At the core of the SWGEmu project lies the "Emulator," referring to the meticulo
 
 ## What is Silent Survivor Edition?
 
-SWGEmu Silent Survivor Edition is a customization of the SWGEmu Core3. This edition relaxes some of the classic rulesets for the game. Such as doubling the XP gained, increasing drop rates of loot, and relaxing the requirments for the Bazaar, and many others.
+SWGEmu Silent Survivor Edition is a customization of the SWGEmu Core3. This edition relaxes some of the classic rulesets for the game. Such as doubling the XP gained, increasing drop rates of loot, relaxing the requirments for the Bazaar, changing all resources to 1000 stats, and many others.
 ## How do I join this server?
 
 This is a personal project and the server may not always be online. You can use the default SWGEmu client to join. No client side mods are needed for this server.
