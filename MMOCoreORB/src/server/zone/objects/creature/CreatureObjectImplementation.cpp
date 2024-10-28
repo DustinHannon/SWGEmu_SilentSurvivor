@@ -95,7 +95,7 @@
 #include "server/zone/objects/player/events/SpawnHelperDroidTask.h"
 #include "server/zone/packets/object/StartNpcConversation.h"
 
-float CreatureObjectImplementation::DEFAULTRUNSPEED = 5.376f;
+float CreatureObjectImplementation::DEFAULTRUNSPEED = 10.752f;
 
 void CreatureObjectImplementation::initializeTransientMembers() {
 	TangibleObjectImplementation::initializeTransientMembers();
