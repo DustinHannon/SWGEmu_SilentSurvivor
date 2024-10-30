@@ -76,7 +76,7 @@ randomDotPotency = {20, 100}
 randomDotUses = {10000, 50000}
 
 -- Modifier applied to min/max junk values found in loot item lua
-junkValueModifier = 5;
+junkValueModifier = 20;
 
 lootableArmorAttachmentStatMods = {
 	"aim",
