@@ -300,7 +300,7 @@ int LootManagerImplementation::calculateLootCredits(int level) {
 	int maxcredits = (int) round((.03f * level * level) + (3 * level) + 50);
 	int mincredits = (int) round((((float) maxcredits) * .5f) + (2.0f * level));
 
-	int credits = mincredits + System::random(maxcredits - mincredits);
+	int credits = mincredits + System::random(maxcredits - mincredits) + 100;
 
 	return credits;
 }
