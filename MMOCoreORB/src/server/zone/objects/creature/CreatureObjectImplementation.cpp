@@ -95,7 +95,8 @@
 #include "server/zone/objects/player/events/SpawnHelperDroidTask.h"
 #include "server/zone/packets/object/StartNpcConversation.h"
 
-float CreatureObjectImplementation::DEFAULTRUNSPEED = 16.128f;
+// changing this doesnt seem to change the players run / walk speed - changing it back to default
+float CreatureObjectImplementation::DEFAULTRUNSPEED = 5.375f;
 
 void CreatureObjectImplementation::initializeTransientMembers() {
 	TangibleObjectImplementation::initializeTransientMembers();
