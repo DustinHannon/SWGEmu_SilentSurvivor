@@ -1961,21 +1961,22 @@ void CreatureObjectImplementation::setSpeedMultiplierMod(float newMultiplierMod,
 	}
 }
 
-void CreatureObjectImplementation::setRunSpeed(float newSpeed,
-		bool notifyClient) {
-	if (runSpeed == newSpeed)
-		return;
+// edited to hopefully double runspeed values at any given time
+void CreatureObjectImplementation::setRunSpeed(float newSpeed, bool notifyClient) {
+    // Check if the runSpeed is already set to double the newSpeed
+    if (runSpeed == newSpeed * 2)
+        return;
 
-	runSpeed = newSpeed;
+    // Set runSpeed to double the newSpeed
+    runSpeed = newSpeed * 2;
 
-	if (notifyClient) {
-		CreatureObjectDeltaMessage4* dcreo4 = new CreatureObjectDeltaMessage4(
-				asCreatureObject());
-		dcreo4->updateRunSpeed();
-		dcreo4->close();
+    if (notifyClient) {
+        CreatureObjectDeltaMessage4* dcreo4 = new CreatureObjectDeltaMessage4(asCreatureObject());
+        dcreo4->updateRunSpeed();
+        dcreo4->close();
 
-		sendMessage(dcreo4);
-	}
+        sendMessage(dcreo4);
+    }
 }
 
 void CreatureObjectImplementation::setMoodString(
