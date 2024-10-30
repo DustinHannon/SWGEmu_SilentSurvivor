@@ -637,66 +637,75 @@ bool LootManagerImplementation::createLoot(TransactionLog& trx, SceneObject* con
 }
 
 bool LootManagerImplementation::createLootFromCollection(TransactionLog& trx, SceneObject* container, const LootGroupCollection* lootCollection, int level) {
-	uint64 objectID = 0;
+    uint64 objectID = 0;
 
-	trx.addState("lootCollectionSize", lootCollection->count());
+    trx.addState("lootCollectionSize", lootCollection->count());
 
-	Vector<int> chances;
-	Vector<int> rolls;
-	Vector<String> lootGroupNames;
+    Vector<int> chances;
+    Vector<int> rolls;
+    Vector<String> lootGroupNames;
 
-	for (int i = 0; i < lootCollection->count(); ++i) {
-		const LootGroupCollectionEntry* collectionEntry = lootCollection->get(i);
-		int lootChance = collectionEntry->getLootChance();
+    for (int i = 0; i < lootCollection->count(); ++i) {
+        const LootGroupCollectionEntry* collectionEntry = lootCollection->get(i);
+        int lootChance = collectionEntry->getLootChance();
 
-		if (lootChance <= 0)
-			continue;
+        // CUSTOM ADDED - Double the loot chance, cap at 10000000 using ternary operator
+        lootChance = (lootChance * 2 > 10000000) ? 10000000 : lootChance * 2;
 
-		int roll = System::random(10000000);
+        if (lootChance <= 0)
+            continue;
 
-		rolls.add(roll);
+        // Generate a random roll between 0 and 9,999,999
+	int roll = System::random(10000000);
 
-		if (roll > lootChance)
-			continue;
+        rolls.add(roll);
 
- 		// Start at 0
-		int tempChance = 0;
+        // If roll is greater than lootChance, skip to the next entry
+	if (roll > lootChance)
+            continue;
+	
+	// If we reach this point, roll <= lootChance
+	// Proceed to generate loot
 
-		const LootGroups* lootGroups = collectionEntry->getLootGroups();
+        // Start at 0
+        int tempChance = 0;
 
-		//Now we do the second roll to determine loot group.
-		roll = System::random(10000000);
+        const LootGroups* lootGroups = collectionEntry->getLootGroups();
 
-		rolls.add(roll);
+        // Now we do the second roll to determine loot group.
+        roll = System::random(10000000);
 
-		//Select the loot group to use.
-		for (int k = 0; k < lootGroups->count(); ++k) {
-			const LootGroupEntry* groupEntry = lootGroups->get(k);
+        rolls.add(roll);
 
-			lootGroupNames.add(groupEntry->getLootGroupName());
+        // Select the loot group to use.
+        for (int k = 0; k < lootGroups->count(); ++k) {
+            const LootGroupEntry* groupEntry = lootGroups->get(k);
 
-			tempChance += groupEntry->getLootChance();
+            lootGroupNames.add(groupEntry->getLootGroupName());
 
-			// Is this entry lower than the roll? If yes, then we want to try the next groupEntry.
-			if (tempChance < roll)
-				continue;
+            tempChance += groupEntry->getLootChance();
 
-			objectID = createLoot(trx, container, groupEntry->getLootGroupName(), level);
+            // Is this entry lower than the roll? If yes, then we want to try the next groupEntry.
+            if (tempChance < roll)
+                continue;
 
-			break;
-		}
-	}
+            objectID = createLoot(trx, container, groupEntry->getLootGroupName(), level);
 
-	trx.addState("lootChances", chances);
-	trx.addState("lootRolls", rolls);
-	trx.addState("lootGroups", lootGroupNames);
+            break;
+        }
+    }
 
-	if (objectID == 0) {
-		trx.abort() << "Did not win loot rolls.";
-	}
+    trx.addState("lootChances", chances);
+    trx.addState("lootRolls", rolls);
+    trx.addState("lootGroups", lootGroupNames);
 
-	return objectID > 0 ? true : false;
+    if (objectID == 0) {
+        trx.abort() << "Did not win loot rolls.";
+    }
+
+    return objectID > 0 ? true : false;
 }
+
 
 uint64 LootManagerImplementation::createLoot(TransactionLog& trx, SceneObject* container, const String& lootMapEntry, int level, bool maxCondition) {
 	String lootEntry = lootMapEntry;
