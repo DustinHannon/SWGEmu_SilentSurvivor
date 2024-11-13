@@ -663,6 +663,13 @@ ShipAiAgent* ShipManager::createAiShip(const String& shipName, uint32 shipCRC) {
 
 	// info(true) << "ShipManager::createAiShip -- ShipName: " << agentTemplate->getTemplateName() << " Game Object Type: " << shipTemp->getGameObjectType() << " Ship Hash: " << shipTemp->getServerObjectCRC() << " Full Template: " << shipTemp->getFullTemplateString();
 
+	// Set Special range
+	if (shipName.hashCode() == STRING_HASHCODE("star_destroyer")) {
+		shipAgent->setRadius(ZoneServer::SPACESTATIONRANGE);
+	} else if (shipName.contains("corvette")) {
+		shipAgent->setRadius(8192.f);
+	}
+
 	// Load data from ShipAgentTemplate
 	shipAgent->loadTemplateData(agentTemplate);
 
@@ -709,6 +716,9 @@ ShipObject* ShipManager::createPlayerShip(CreatureObject* owner, const String& s
 
 	Locker shipLock(ship, owner);
 
+	// Set ship owner
+	ship->setOwner(owner);
+
 	// Load ship template data
 	ship->loadTemplateData(shipTemp);
 
@@ -748,8 +758,6 @@ ShipObject* ShipManager::createPlayerShip(CreatureObject* owner, const String& s
 	}
 
 	owner->sendSystemMessage("@chassis_npc:succeed"); // You successfully add a ship control device to your datapad.
-
-	ship->setOwner(owner);
 
 	shipControlDevice->sendTo(owner, true);
 
@@ -857,7 +865,7 @@ bool ShipManager::createDeedFromChassis(CreatureObject* player, ShipChassisCompo
 		auto planetManager = zone->getPlanetManager();
 
 		if (planetManager != nullptr) {
-			auto travelPoint = planetManager->getNearestPlanetTravelPoint(player->getWorldPosition(), 128.f);
+			auto travelPoint = planetManager->getNearestPlanetTravelPoint(player->getWorldPosition());
 
 			if (travelPoint != nullptr) {
 				auto travelPointName = travelPoint->getPointName();
@@ -906,13 +914,9 @@ int ShipManager::notifyDestruction(ShipObject* destructorShip, ShipAiAgent* dest
 	destructedShip->wipeBlackboard();
 	destructedShip->clearRunningChain();
 
-	if (destructorShip == nullptr) {
-		return 1;
-	}
-
 	auto zoneServer = destructorShip->getZoneServer();
 
-	if (zoneServer == nullptr) {
+	if (zoneServer == nullptr || zoneServer->isServerShuttingDown()) {
 		return 1;
 	}
 
@@ -940,14 +944,22 @@ int ShipManager::notifyDestruction(ShipObject* destructorShip, ShipAiAgent* dest
 			5. XP awarded
 		*/
 
-		// TODO: Grant Credit Chip here
+		// This function will return a player ship that either has the highest single damage or highest group damage.
+		auto highestShip = copyThreatMap.getHighestDamagePlayerShip();
 
+		if (highestShip != nullptr) {
+			Locker highestLock(highestShip, destructedShip);
 
+			int minCredits = destructedShip->getMinLootCredits();
+			int maxCredits = destructedShip->getMaxLootCredits();
+			int randomPayout = 0;
 
-		// object/tangible/item/loot_credit_chip.iff
-		// 'string/en/space/space_loot.stf', '11', 'looted_credits', '%TT has looted a credit chip worth %DI credits.
+			if (maxCredits > 0) {
+				randomPayout = System::random(maxCredits - minCredits) + minCredits;
+			}
 
-
+			highestShip->awardLootItems(destructedShip, randomPayout);
+		}
 
 		// Quest Kill Observers
 		SortedVector<ManagedReference<Observer* > > observers = destructedShip->getObservers(ObserverEventType::QUESTKILL);
@@ -968,10 +980,6 @@ int ShipManager::notifyDestruction(ShipObject* destructorShip, ShipAiAgent* dest
 				attackerShip->notifyObservers(ObserverEventType::QUESTKILL, destructedShip);
 			}
 		}
-
-
-		// TODO: Grant Loot here
-
 
 		// Handle Awarding XP
 		ManagedReference<PlayerManager*> playerManager = zoneServer->getPlayerManager();
@@ -1017,6 +1025,15 @@ int ShipManager::notifyDestruction(ShipObject* destructorShip, ShipAiAgent* dest
 		// Finally if the destructor has no more defenders, clear their combat state
 		if (!destructorShip->hasDefenders()) {
 			destructorShip->clearCombatState(false);
+		}
+
+		// Remove the destucted ship agent from the destructors enemy list
+		if (destructorShip->isShipAiAgent()) {
+			auto agentDestructor = destructorShip->asShipAiAgent();
+
+			if (agentDestructor != nullptr) {
+				agentDestructor->removeEnemyShip(destructedShip->getObjectID());
+			}
 		}
 	}
 
