@@ -327,6 +327,8 @@ void ObjectManager::registerObjectTypes() {
 	objectFactory.registerObject<PowerupObject>(SceneObjectType::HEAVYWEAPONPOWERUP);
 	objectFactory.registerObject<PowerupObject>(SceneObjectType::MINEPOWERUP);
 	objectFactory.registerObject<PowerupObject>(SceneObjectType::SPECIALHEAVYWEAPONPOWERUP);
+
+	// JTL Related
 	objectFactory.registerObject<ShipComponent>(SceneObjectType::SHIPATTACHMENT);
 	objectFactory.registerObject<ShipReactorComponent>(SceneObjectType::SHIPREACTOR);
 	objectFactory.registerObject<ShipEngineComponent>(SceneObjectType::SHIPENGINE);
@@ -337,8 +339,8 @@ void ObjectManager::registerObjectTypes() {
 	objectFactory.registerObject<ShipBoosterComponent>(SceneObjectType::SHIPBOOSTER);
 	objectFactory.registerObject<ShipDroidInterfaceComponent>(SceneObjectType::SHIPDRIODINTERFACE);
 	objectFactory.registerObject<ShipChassisComponent>(SceneObjectType::SHIPCHASSIS);
-	objectFactory.registerObject<Component>(SceneObjectType::SHIPMISSILE);
-	objectFactory.registerObject<Component>(SceneObjectType::SHIPCOUNTERMEASURE);
+	objectFactory.registerObject<ShipComponent>(SceneObjectType::SHIPMISSILE);
+	objectFactory.registerObject<ShipComponent>(SceneObjectType::SHIPCOUNTERMEASURE);
 	objectFactory.registerObject<ShipWeaponComponent>(SceneObjectType::SHIPWEAPONLAUNCHER);
 	objectFactory.registerObject<ShipWeaponComponent>(SceneObjectType::SHIPCOUNTERMEASURELAUNCHER);
 	objectFactory.registerObject<StaticObject>(SceneObjectType::ASTEROID);
@@ -348,8 +350,10 @@ void ObjectManager::registerObjectTypes() {
 	objectFactory.registerObject<TangibleObject>(SceneObjectType::SHIPCONTAINER);
 	objectFactory.registerObject<FactoryCrate>(SceneObjectType::FACTORYCRATE);
 	objectFactory.registerObject<TangibleObject>(SceneObjectType::CRYSTAL);
+	objectFactory.registerObject<ShipComponentRepairKit>(SceneObjectType::SHIPCOMPONENTREPAIRITEM);
+	objectFactory.registerObject<ShipInteriorComponent>(SceneObjectType::SHIPINTERIORCOMPONENT);
 
-	// JTL Related
+
 	objectFactory.registerObject<SpaceActiveArea>(SceneObjectType::SPACEACTIVEAREA);
 	objectFactory.registerObject<NebulaArea>(SceneObjectType::NEBULAAREA);
 	objectFactory.registerObject<SpaceRegion>(SceneObjectType::SPACEREGIONAREA);
