@@ -437,6 +437,7 @@ void DirectorManager::initializeLuaEngine(Lua* luaEngine) {
 	luaEngine->registerFunction("createObserver", createObserver);
 	luaEngine->registerFunction("dropObserver", dropObserver);
 	luaEngine->registerFunction("hasObserver", hasObserver);
+	luaEngine->registerFunction("hasObserverType", hasObserverType);
 	luaEngine->registerFunction("spawnMobile", spawnMobile);
 	luaEngine->registerFunction("spawnEventMobile", spawnEventMobile);
 	luaEngine->registerFunction("spawnShipAgent", spawnShipAgent);
@@ -652,12 +653,14 @@ void DirectorManager::initializeLuaEngine(Lua* luaEngine) {
 	luaEngine->setGlobalLong("SHIP_GUNNER7_POB", PlayerArrangement::SHIP_GUNNER7_POB);
 
 	//Waypoint Colors
-	luaEngine->setGlobalInt("WAYPOINTBLUE", WaypointObject::COLOR_BLUE);
-	luaEngine->setGlobalInt("WAYPOINTGREEN", WaypointObject::COLOR_GREEN);
-	luaEngine->setGlobalInt("WAYPOINTYELLOW", WaypointObject::COLOR_YELLOW);
-	luaEngine->setGlobalInt("WAYPOINTPURPLE", WaypointObject::COLOR_PURPLE);
-	luaEngine->setGlobalInt("WAYPOINTWHITE", WaypointObject::COLOR_WHITE);
-	luaEngine->setGlobalInt("WAYPOINTORANGE", WaypointObject::COLOR_ORANGE);
+	luaEngine->setGlobalInt("WAYPOINT_WHITE", WaypointObject::COLOR_WHITE);
+	luaEngine->setGlobalInt("WAYPOINT_BLUE", WaypointObject::COLOR_BLUE);
+	luaEngine->setGlobalInt("WAYPOINT_GREEN", WaypointObject::COLOR_GREEN);
+	luaEngine->setGlobalInt("WAYPOINT_ORANGE", WaypointObject::COLOR_ORANGE);
+	luaEngine->setGlobalInt("WAYPOINT_YELLOW", WaypointObject::COLOR_YELLOW);
+	luaEngine->setGlobalInt("WAYPOINT_PURPLE", WaypointObject::COLOR_PURPLE);
+	luaEngine->setGlobalInt("WAYPOINT_WHITE2", WaypointObject::COLOR_WHITE2);
+	luaEngine->setGlobalInt("WAYPOINT_SPACE", WaypointObject::COLOR_SPACE);
 
 	//Waypoint Special Types
 	luaEngine->setGlobalInt("WAYPOINTTHEMEPARK", WaypointObject::SPECIALTYPE_THEMEPARK);
@@ -3193,6 +3196,47 @@ int DirectorManager::createObserver(lua_State* L) {
 
 int DirectorManager::hasObserver(lua_State* L) {
 	int numberOfArguments = lua_gettop(L);
+
+	if (numberOfArguments != 4) {
+		String err = "incorrect number of arguments passed to DirectorManager::hasObserver";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	SceneObject* sceneObject = (SceneObject*) lua_touserdata(L, -1);
+	String key = lua_tostring(L, -2);
+	String play = lua_tostring(L, -3);
+	uint32 eventType = lua_tointeger(L, -4);
+
+	SortedVector<ManagedReference<Observer* > > observers = sceneObject->getObservers(eventType);
+	bool ret = false;
+
+	for (int i = 0; i < observers.size(); i++) {
+		Observer* observer = observers.get(i).get();
+
+		if (observer == nullptr || !observer->isObserverType(ObserverType::SCREENPLAY)) {
+			continue;
+		}
+
+		auto screenplayObserver = cast<ScreenPlayObserver*>(observer);
+
+		if (screenplayObserver == nullptr || !(screenplayObserver->getScreenPlay() == play && screenplayObserver->getScreenKey() == key)) {
+			continue;
+		}
+
+		ret = true;
+		break;
+	}
+
+	lua_pushboolean(L, ret);
+
+	return 1;
+}
+
+int DirectorManager::hasObserverType(lua_State* L) {
+	int numberOfArguments = lua_gettop(L);
+
 	if (numberOfArguments != 2) {
 		String err = "incorrect number of arguments passed to DirectorManager::hasObserver";
 		printTraceError(L, err);
