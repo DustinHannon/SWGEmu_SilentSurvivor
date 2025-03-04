@@ -125,6 +125,7 @@ const String SceneObjectType::typeToString(int gameObjectType) {
 		case FSBUFFITEM:				return "@got_n:misc";
 		case DEADEYEPROTOTYPE:			return "@got_n:misc";
 		case CONTRACTCRATE:				return "@got_n:misc";
+		case SCHEMATICFRAGMENT:				return "@got_n:misc";
 		case TERMINAL:					return "@got_n:terminal";
 		case BANK:						return "@got_n:terminal_bank";
 		case BAZAAR:					return "@got_n:terminal_bazaar";
@@ -256,7 +257,7 @@ const String SceneObjectType::typeToString(int gameObjectType) {
 		case ROBE:						return "@got_n:clothing_robe";
 		case SHIRT:						return "@got_n:clothing_shirt";
 		case VEST:						return "@got_n:clothing_vest";
-		case WOOKIEGARB:				return "@got_n:clothing_wookiee";
+		case WOOKIEEGARB:				return "@got_n:clothing_wookiee";
 		case MISCCLOTHING:				return "@got_n:clothing_misc";
 		case SKIRT:						return "@got_n:clothing_skirt";
 		case BADGEAREA:					return "@got_n:misc";

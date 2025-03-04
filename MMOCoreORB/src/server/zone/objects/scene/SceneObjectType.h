@@ -171,6 +171,7 @@ public:
 	const static int SPACESPAWNER = 0x203E;
 	const static int CREDITCHIP = 0x203F;
 	const static int COMPONENTANALYSISTOOL = 0x2040;
+	const static int SCHEMATICFRAGMENT = 0x2041;
 	/// End Not in client **************
 
 	const static int TERMINAL = 0x4000;
@@ -332,7 +333,7 @@ public:
 	const static int ROBE = 0x100000D;
 	const static int SHIRT = 0x100000E;
 	const static int VEST = 0x100000F;
-	const static int WOOKIEGARB = 0x1000010;
+	const static int WOOKIEEGARB = 0x1000010;
 	const static int MISCCLOTHING = 0x1000011;
 	const static int SKIRT = 0x1000012;
 

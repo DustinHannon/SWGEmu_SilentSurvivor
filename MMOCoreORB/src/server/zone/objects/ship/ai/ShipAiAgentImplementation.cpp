@@ -54,6 +54,8 @@
 #include "server/zone/managers/creature/CreatureTemplateManager.h"
 #include "server/zone/managers/conversation/ConversationManager.h"
 #include "server/zone/objects/creature/conversation/ConversationObserver.h"
+#include "server/zone/managers/player/PlayerManager.h"
+#include "server/zone/managers/faction/FactionManager.h"
 
 
 // #define DEBUG_SHIP_AI
@@ -229,7 +231,7 @@ void ShipAiAgentImplementation::loadTemplateData(ShipAgentTemplate* agentTemp) {
 	optionsBitmask = agentTemplate->getOptionsBitmask();
 
 	// Set Faction
-	setShipFaction(agentTemplate->getSpaceFaction(), false);
+	setShipFactionString(agentTemplate->getSpaceFaction(), false);
 	setFactionStatus(FactionStatus::OVERT);
 
 	// Handles attackable flags (ObjectFlag::ATTACKABLE, ObjectFlag::AGGRESSIVE etc)
@@ -281,6 +283,11 @@ void ShipAiAgentImplementation::loadTemplateData(ShipAgentTemplate* agentTemp) {
 		auto ally = agentTemplate->getAlliedFaction(i);
 
 		alliedFactions.add(ally.hashCode());
+	}
+
+	// Make sure our own faction is set as allied
+	if (shipFaction > 0 && !alliedFactions.contains(shipFaction)) {
+		alliedFactions.add(shipFaction);
 	}
 
 	// Add Enemy factions
@@ -684,6 +691,10 @@ float ShipAiAgentImplementation::getMaxDistance() {
 		break;
 	}
 	case ShipAiAgent::PATROLLING:
+		if (shipBitmask & ShipFlag::ESCORT) {
+			maxDistance = getEscortSpeed() + getBoundingRadius();
+		}
+
 		break;
 	case ShipAiAgent::ATTACKING: {
 		ManagedReference<ShipObject*> targetShip = getTargetShipObject().get();
@@ -1156,6 +1167,12 @@ void ShipAiAgentImplementation::setNextSpeed() {
 	float speedMax = getActualMaxSpeed() * getMaxThrottle();
 	float speedMin = getActualMaxSpeed() * getMinThrottle();
 
+	float escortSpeed = getEscortSpeed();
+
+	if (escortSpeed > 0.f) {
+		speedMax = escortSpeed;
+	}
+
 	const Vector3& currentPosition = getWorldPosition();
 	const Vector3& nextPosition = getFinalPosition().getWorldPosition();
 
@@ -1361,9 +1378,9 @@ bool ShipAiAgentImplementation::generatePatrol(int totalPoints, float distance, 
 	/* ShipFlag.h
 		GUARD_PATROL - For ships that patrol a specific area in a spherical pattern where they will have a min range and max range to stay within
 			used for ships in patrol around a point or object such as a space station.
-		RANDOM_PATROL - Default method for patrolling. Randomly generates points around its home location.alignas
-		FIXED_PATROL - For ships that have specific set of patrol points assigned to them and will only navigate to those points.alignas
-		SQUADRON_PATROL - For ships that are in a squadron, this will be used to create and assign them to an observer as well as the behaviors needed to operate in the squadron.alignas
+		RANDOM_PATROL - Default method for patrolling. Randomly generates points around its home location.
+		FIXED_PATROL - For ships that have specific set of patrol points assigned to them and will only navigate to those points.
+		SQUADRON_PATROL - For ships that are in a squadron, this will be used to create and assign them to an observer as well as the behaviors needed to operate in the squadron.
 		SQUADRON_FOLLOW - Similar to above, but for ships that have to follow another ship while in a squadron.
 	*/
 
@@ -1849,6 +1866,91 @@ bool ShipAiAgentImplementation::isEnemyShip(uint64 shipID) {
 	return enemyShipList.contains(shipID);
 }
 
+bool ShipAiAgentImplementation::isPlayerFactionAlly(CreatureObject* player) {
+	if (player == nullptr) {
+		return false;
+	}
+
+	auto ghost = player->getPlayerObject();
+
+	if (ghost == nullptr) {
+		return false;
+	}
+
+	int pilotSquadron = ghost->getPilotSquadron();
+	int pilotTier = ghost->getPilotTier();
+
+	uint32 playerFactionHash = FactionManager::instance()->getSpaceFactionBySquadron(pilotSquadron, pilotTier);
+	uint32 thisAgentFaction = getShipFaction();
+
+	// Player is ally faction
+	if (playerFactionHash > 0 && (playerFactionHash == thisAgentFaction || alliedFactions.contains(playerFactionHash))) {
+		return true;
+	}
+
+	return false;
+}
+
+bool ShipAiAgentImplementation::isPlayerFactionEnemy(CreatureObject* player) {
+	if (player == nullptr) {
+		return false;
+	}
+
+	auto ghost = player->getPlayerObject();
+
+	if (ghost == nullptr) {
+		return false;
+	}
+
+	int pilotSquadron = ghost->getPilotSquadron();
+	int pilotTier = ghost->getPilotTier();
+
+	uint32 playerFactionHash = FactionManager::instance()->getSpaceFactionBySquadron(pilotSquadron, pilotTier);
+
+	// Player is enemy faction
+	if (playerFactionHash > 0 && enemyFactions.contains(playerFactionHash)) {
+		return true;
+	}
+
+	return false;
+}
+
+void ShipAiAgentImplementation::addSpaceFactionAlly(uint32 factionHash) {
+	if (factionHash == 0 || alliedFactions.contains(factionHash)) {
+		return;
+	}
+
+	alliedFactions.add(factionHash);
+	broadcastPvpStatusBitmask();
+}
+
+void ShipAiAgentImplementation::removeSpaceFactionAlly(uint32 factionHash) {
+	if (factionHash == 0 || !alliedFactions.contains(factionHash)) {
+		return;
+	}
+
+	alliedFactions.removeElement(factionHash);
+	broadcastPvpStatusBitmask();
+}
+
+void ShipAiAgentImplementation::addSpaceFactionEnemy(uint32 factionHash) {
+	if (factionHash == 0 || enemyFactions.contains(factionHash)) {
+		return;
+	}
+
+	enemyFactions.add(factionHash);
+	broadcastPvpStatusBitmask();
+}
+
+void ShipAiAgentImplementation::removeSpaceFactionEnemy(uint32 factionHash) {
+	if (factionHash == 0 || !enemyFactions.contains(factionHash)) {
+		return;
+	}
+
+	enemyFactions.removeElement(factionHash);
+	broadcastPvpStatusBitmask();
+}
+
 bool ShipAiAgentImplementation::isAggressiveTo(TangibleObject* target) {
 	if (target == nullptr || getObjectID() == target->getObjectID())
 		return false;
@@ -1872,8 +1974,20 @@ bool ShipAiAgentImplementation::isAggressive(TangibleObject* target) {
 	if (target->isInvisible())
 		return false;
 
+	if (!target->isShipObject()) {
+		return false;
+	}
+
+	auto targetShip = target->asShipObject();
+
+	if (targetShip == nullptr) {
+		return false;
+	}
+
 	bool targetIsShipAgent = target->isShipAiAgent();
-	bool targetIsPlayer = !targetIsShipAgent;
+	bool targetIsPlayer = target->isPlayerShip();
+
+	/* Space Faction Check differentiate from ground checks
 
 	// Get factions
 	uint32 thisFaction = getFaction();
@@ -1890,16 +2004,12 @@ bool ShipAiAgentImplementation::isAggressive(TangibleObject* target) {
 			return true;
 		// Target is a player ship
 		} else {
-			auto targetShip = target->asShipObject();
-
-			if (targetShip == nullptr)
-				return false;
-
 			// Faction checks against the ships owner
 			auto shipOwner = targetShip->getOwner().get();
 
-			if (shipOwner == nullptr)
+			if (shipOwner == nullptr) {
 				return false;
+			}
 
 			bool covertOvert = ConfigManager::instance()->useCovertOvertSystem();
 
@@ -1925,15 +2035,30 @@ bool ShipAiAgentImplementation::isAggressive(TangibleObject* target) {
 				}
 			}
 		}
-	} else if (targetIsShipAgent) {
+	}
+	*/
+
+	uint32 spaceFaction = getShipFaction();
+
+	if (targetIsShipAgent) {
 		auto targetAgent = target->asShipAiAgent();
 
 		if (targetAgent != nullptr) {
-			auto targetSpaceFaction = targetAgent->getShipFaction().hashCode();
+			auto targetSpaceFaction = targetAgent->getShipFaction();
 
 			if (targetSpaceFaction > 0 && enemyFactions.contains(targetSpaceFaction)) {
 				return true;
 			}
+		}
+	} else if (targetIsPlayer && spaceFaction > 0) {
+		auto shipOwner = targetShip->getOwner().get();
+
+		if (shipOwner == nullptr) {
+			return false;
+		}
+
+		if (isPlayerFactionEnemy(shipOwner)) {
+			return true;
 		}
 	}
 
@@ -1962,6 +2087,8 @@ bool ShipAiAgentImplementation::isAttackableBy(TangibleObject* attackerTano) {
 		return false;
 	}
 
+	// info(true) << "ShipAiAgentImplementation::isAttackableBy TangibleObject Check -- Ship Agent: " << getDisplayedName() << " by attackerTano = " << attackerTano->getDisplayedName();
+
 	if (attackerTano->isCreatureObject()) {
 		return isAttackableBy(attackerTano->asCreatureObject());
 	} else if (attackerTano->isPlayerShip()) {
@@ -1978,18 +2105,17 @@ bool ShipAiAgentImplementation::isAttackableBy(TangibleObject* attackerTano) {
 		auto attackerAgent = attackerTano->asShipAiAgent();
 
 		if (attackerAgent != nullptr) {
-			auto attackerSpaceFaction = attackerAgent->getShipFaction().hashCode();
+			auto attackerSpaceFaction = attackerAgent->getShipFaction();
 
-			if (attackerSpaceFaction > 0 && alliedFactions.contains(attackerSpaceFaction)) {
+			if (attackerSpaceFaction > 0 && alliedFactions.contains(attackerSpaceFaction) && !enemyFactions.contains(attackerSpaceFaction)) {
 				return false;
 			}
 		}
 	}
 
-	// info(true) << "ShipAiAgentImplementation::isAttackableBy TangibleObject Check -- Ship Agent: " << getDisplayedName() << " by attackerTano = " << attackerTano->getDisplayedName();
-
+	/*
 	// Get factions
-	uint32 thisFaction = getShipFaction().hashCode();
+	uint32 thisFaction = getShipFaction();
 	uint32 shipFaction = attackerTano->getFaction();
 
 	if (thisFaction != 0 || shipFaction != 0) {
@@ -2001,6 +2127,7 @@ bool ShipAiAgentImplementation::isAttackableBy(TangibleObject* attackerTano) {
 			return false;
 		}
 	}
+	*/
 
 	// info(true) << "ShipAiAgentImplementation::isAttackableBy TangibleObject Check returned true";
 
@@ -2016,31 +2143,10 @@ bool ShipAiAgentImplementation::isAttackableBy(CreatureObject* attacker) {
 		return false;
 	}
 
-	// Get factions
-	uint32 thisFaction = getFaction();
-	uint32 attackerFaction = attacker->getFaction();
+	// info(true) << "ShipAiAgentImplementation::isAttackableBy Creature Check -- ShipAgent: " << getDisplayedName() << " by attacker = " << attacker->getDisplayedName() " Agent Space Faction: " << getShipFactionString();
 
-	// info(true) << "ShipAiAgentImplementation::isAttackableBy Creature Check -- ShipAgent: " << getDisplayedName() << " by attacker = " << attacker->getDisplayedName() << " thisFaction: " << thisFaction;
-
-	// Faction Checks
-	if (thisFaction != 0) {
-		auto ghost = attacker->getPlayerObject();
-
-		if (ghost != nullptr && ghost->hasCrackdownTefTowards(thisFaction)) {
-			return true;
-		}
-
-		// Attacker has no faction
-		if (attackerFaction == 0)
-			return false;
-
-		// This faction and attacking creature are same faction
-		if (thisFaction == attackerFaction)
-			return false;
-
-		// Attack creature is not an AiAgent && their faction status is OnLeave
-		if (attacker->getFactionStatus() < FactionStatus::COVERT)
-			return false;
+	if (attacker->isPlayerCreature() && isPlayerFactionAlly(attacker)) {
+		return false;
 	}
 
 	// info(true) << "ShipAiAgentImplementation::isAttackableBy Creature Check returned true";
@@ -2301,7 +2407,7 @@ String ShipAiAgentImplementation::getShipAgentTemplateName() {
 	return templateName;
 }
 
-float ShipAiAgentImplementation::getOutOfRangeDistance() const {
+float ShipAiAgentImplementation::getOutOfRangeDistance(uint64 specialRangeID) {
 	return ZoneServer::SPACECLOSEOBJECTRANGE;
 }
 
