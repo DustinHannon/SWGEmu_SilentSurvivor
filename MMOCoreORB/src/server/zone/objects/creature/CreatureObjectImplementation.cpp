@@ -3405,11 +3405,13 @@ bool CreatureObjectImplementation::isAttackableBy(CreatureObject* creature, bool
 
 	// info(true) << "CreatureObjectImplementation::isAttackableBy Creature Check -- " << getDisplayedName() << " ID: " << getObjectID() << " by attacking Creature: " << creature->getDisplayedName() << " ID: " << creature->getObjectID();
 
-	if (!bypassDeadCheck && isDead())
+	if (!bypassDeadCheck && isDead()) {
 		return false;
+	}
 
-	if (creature->getZoneUnsafe() != getZoneUnsafe())
+	if (creature->getZoneUnsafe() != getZoneUnsafe()) {
 		return false;
+	}
 
 	// Vehicle object, check against owner
 	if (isVehicleObject()) {
@@ -3421,8 +3423,9 @@ bool CreatureObjectImplementation::isAttackableBy(CreatureObject* creature, bool
 		return owner->isAttackableBy(creature);
 	}
 
-	if (isInNoCombatArea() || creature->isInNoCombatArea())
+	if (isInNoCombatArea() || creature->isInNoCombatArea()) {
 		return false;
+	}
 
 	// This CreO is a player
 	if (isPlayerCreature()) {
@@ -3503,7 +3506,7 @@ bool CreatureObjectImplementation::isAttackableBy(CreatureObject* creature, bool
 				return false;
 			}
 
-			// info(true) << creature->getDisplayedName() << " passed basic checks against " << getDisplayedName();
+			// info(true) << "Attacking Player: " << creature->getDisplayedName() << " passed basic checks against against: " << getDisplayedName();
 
 			if (hasPersonalEnemyFlag(creature) && creature->hasPersonalEnemyFlag(asCreatureObject())) {
 				return true;
@@ -3541,7 +3544,6 @@ bool CreatureObjectImplementation::isAttackableBy(CreatureObject* creature, bool
 
 			// PvP - Different Factions. Both must be overt status or we return false
 			if (thisFaction != creatureFaction) {
-
 				if (covertOvert) {
 					int thisFactionStatus = getFactionStatus();
 					int creatureFactionStatus = creature->getFactionStatus();
